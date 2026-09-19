@@ -5,6 +5,7 @@ from games.spec import Game, Rom, pad
 GAME = Game(
     slug="skyland",
     title="Skyland",
+    machine="gba",
     rom=Rom(
         filename="Skyland.gba",
         licence="MPL-2.0",

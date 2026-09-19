@@ -5,6 +5,7 @@ from games.spec import Game, Rom, pad
 GAME = Game(
     slug="anguna",
     title="Anguna",
+    machine="gba",
     rom=Rom(
         filename="anguna.gba",
         licence="Free binary redistribution granted by the author",

@@ -5,10 +5,11 @@ description = "Jev plays open-source Game Boy Advance games through mGBA."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "ale-py>=0.12",          # Atari 2600, ships Stella as a wheel
     "pillow>=10.0",
     "python-dotenv>=1.0",
     "typesafe-sdk>=0.7.0",
-    # mgba is not on PyPI; scripts/build_mgba.sh compiles it into this venv.
+    # mGBA is not on PyPI; scripts/build_mgba.sh compiles it into this venv.
 ]
 
 [project.scripts]

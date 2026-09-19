@@ -25,7 +25,11 @@ def env_var(game: Game) -> str:
 
 
 def resolve(game: Game) -> Path:
-    """Where this game's ROM is, checking the env override before the ROM directory."""
+    """Where this game's ROM is: the env override, then the ROM directory, then ale-py.
+
+    The ale-py fallback only reads a file the user's own install already put on disk. We
+    never download or redistribute those ROMs.
+    """
 
     override = os.environ.get(env_var(game))
     if override:
@@ -33,12 +37,19 @@ def resolve(game: Game) -> Path:
         if not path.is_file():
             raise FileNotFoundError(f"{env_var(game)} points at {path}, which is not a file")
         return path
-    return DEFAULT_DIR / game.rom.filename
+    local = DEFAULT_DIR / game.rom.filename
+    if local.is_file() or game.rom.ale_id is None:
+        return local
+    from ale_py import roms as ale_roms
+
+    return ale_roms.get_rom_path(game.rom.ale_id) or local
 
 
 def fetch(game: Game, directory: Path = DEFAULT_DIR) -> Path:
     """Download the ROM if its licence lets us, and check the digest we recorded."""
 
+    if game.rom.ale_id is not None:
+        raise PermissionError(f"{game.title}: {game.rom.note} Nothing to download.")
     if game.rom.url is None:
         raise PermissionError(
             f"{game.title}: no ROM we may redistribute or fetch ({game.rom.licence}). "

@@ -5,6 +5,7 @@ from games.spec import Game, Rom, pad
 GAME = Game(
     slug="gba_tactics",
     title="GBA Tactics",
+    machine="gba",
     rom=Rom(
         filename="gbatactics.gba",
         licence="GPL-2.0-or-later",

@@ -7,18 +7,15 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from emulator.gba import HEIGHT, WIDTH
-
 SCALE = 2
-SCREEN = (WIDTH * SCALE, HEIGHT * SCALE)
 PANEL_WIDTH = 400
 MARGIN = 14
 LINE = 12
-CANVAS = (SCREEN[0] + PANEL_WIDTH, 524)
+CANVAS_HEIGHT = 524
 WRAP = 62
 GBA_FPS = 59.7
 # A long run would otherwise produce a GIF too heavy to put in a README.
-MAX_FRAMES = 90
+MAX_FRAMES = 60
 
 _BACKGROUND = (17, 17, 21)
 _RULE = (58, 58, 68)
@@ -49,30 +46,38 @@ def _wrapped(observation: str) -> list[str]:
     return lines
 
 
+def canvas_size(screen: Image.Image) -> tuple[int, int]:
+    """The GBA is landscape and the 2600 portrait, so the frame is sized per console."""
+
+    return (screen.width * SCALE + PANEL_WIDTH, CANVAS_HEIGHT)
+
+
 def compose(screen: Image.Image, title: str, step: str, observation: str, decision: list[str]) -> Image.Image:
     """One frame: the game and Jev's input on the left, the text Jev was given on the right."""
 
     small, mono, bold = _font(10), _font(10), _font(13, bold=True)
-    canvas = Image.new("RGB", CANVAS, _BACKGROUND)
-    canvas.paste(screen.resize(SCREEN, Image.NEAREST), (0, 40))
+    size = (screen.width * SCALE, screen.height * SCALE)
+    width, height = canvas_size(screen)
+    canvas = Image.new("RGB", (width, height), _BACKGROUND)
+    canvas.paste(screen.resize(size, Image.NEAREST), (0, 40))
     draw = ImageDraw.Draw(canvas)
 
     draw.text((MARGIN, 13), title, font=bold, fill=_TEXT)
-    draw.text((SCREEN[0] - MARGIN - 70, 15), step, font=small, fill=_LABEL)
-    draw.line((0, 34, CANVAS[0], 34), fill=_RULE)
-    draw.line((SCREEN[0], 0, SCREEN[0], CANVAS[1]), fill=_RULE)
+    draw.text((size[0] - MARGIN - 70, 15), step, font=small, fill=_LABEL)
+    draw.line((0, 34, width, 34), fill=_RULE)
+    draw.line((size[0], 0, size[0], height), fill=_RULE)
 
-    y = 40 + SCREEN[1] + 24
+    y = min(40 + size[1] + 24, height - 4 * LINE - 26)
     draw.text((MARGIN, y), "WHAT JEV PRESSED", font=small, fill=_LABEL)
     draw.text((MARGIN, y + 20), decision[0], font=bold, fill=_ACTION)
     for offset, line in enumerate(decision[1:]):
         draw.text((MARGIN, y + 42 + offset * LINE), line, font=mono, fill=_TEXT)
 
-    left = SCREEN[0] + MARGIN
+    left = size[0] + MARGIN
     draw.text((left, 13), "WHAT JEV IS GIVEN", font=small, fill=_LABEL)
     y = 42
     for line in _wrapped(observation):
-        if y > CANVAS[1] - LINE:
+        if y > height - LINE:
             draw.text((left, y), "...", font=mono, fill=_LABEL)
             break
         draw.text((left, y), line, font=mono, fill=_TEXT)
@@ -110,9 +115,10 @@ def save_gif(frames: list[Image.Image], hold_frames: list[int], path: Path, spee
         return
     frames, hold_frames = _thin(frames, hold_frames)
     durations = [max(40, round(held / GBA_FPS * 1000 / speed)) for held in hold_frames]
-    sample = Image.new("RGB", (CANVAS[0], CANVAS[1] * min(len(frames), 8)))
+    width, height = frames[0].size
+    sample = Image.new("RGB", (width, height * min(len(frames), 8)))
     for index, frame in enumerate(frames[:: max(1, len(frames) // 8)][:8]):
-        sample.paste(frame, (0, index * CANVAS[1]))
+        sample.paste(frame, (0, index * height))
     shared = sample.quantize(colors=64, method=Image.MEDIANCUT)
     quantised = [frame.quantize(palette=shared, dither=Image.Dither.NONE) for frame in frames]
     quantised[0].save(path, save_all=True, append_images=quantised[1:], duration=durations, loop=0, optimize=True)

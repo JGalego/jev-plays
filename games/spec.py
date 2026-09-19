@@ -41,6 +41,8 @@ class Rom:
     url: str | None = None
     sha256: str | None = None
     companions: tuple[tuple[str, str], ...] = ()
+    # A ROM the user already has because ale-py shipped it. We never fetch or ship these.
+    ale_id: str | None = None
     note: str = ""
 
 
@@ -50,6 +52,8 @@ class Game:
 
     slug: str
     title: str
+    # Which console, and so which adapter in emulator/ runs it: "gba" or "atari".
+    machine: str
     rom: Rom
     objective: str
     actions: Mapping[str, Action]

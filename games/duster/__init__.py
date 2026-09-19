@@ -5,6 +5,7 @@ from games.spec import Game, Rom, pad
 GAME = Game(
     slug="duster",
     title="Duster",
+    machine="gba",
     rom=Rom(
         filename="Duster.gba",
         licence="Unknown",

@@ -5,6 +5,7 @@ from games.spec import Game, Rom, pad
 GAME = Game(
     slug="nucular_science",
     title="NucularScience",
+    machine="gba",
     rom=Rom(
         filename="NucularScience.gba",
         licence="Zlib",

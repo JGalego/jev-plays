@@ -5,6 +5,7 @@ from games.spec import Game, Rom, pad
 GAME = Game(
     slug="solar_guard",
     title="Solar Guard",
+    machine="gba",
     rom=Rom(
         filename="Solar_Guard.gba",
         licence="GPL-3.0-only",

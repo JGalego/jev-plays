@@ -7,12 +7,22 @@ import importlib
 from games.spec import Action, Game, Rom
 
 SLUGS = (
+    # Game Boy Advance, through mGBA
     "anguna",
     "gba_tactics",
     "duster",
     "nucular_science",
     "skyland",
     "solar_guard",
+    # Atari 2600, through the Arcade Learning Environment
+    "a2600_2048",
+    "a2600_pipes",
+    "a2600_bounstryk",
+    # Atari 2600 classics, run from the copies ale-py put on your own disk
+    "a2600_breakout",
+    "a2600_pong",
+    "a2600_space_invaders",
+    "a2600_freeway",
 )
 
 __all__ = ["SLUGS", "Action", "Game", "Rom", "all_games", "load"]

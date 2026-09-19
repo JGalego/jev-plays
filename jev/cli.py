@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 from typesafe_sdk import TypeSafeClient
 
 import games
-from emulator import Emulator
 from emulator.observe import Observer
 from games import roms
 from jev.player import choose_action
@@ -28,10 +27,22 @@ CAPTURES_PER_DECISION = 3
 SETTLE_FRAMES = 8
 
 
+def _emulator_for(game: games.Game):
+    """The adapter that runs this console. Imported late so ale-py stays optional."""
+
+    if game.machine == "gba":
+        from emulator.gba import Emulator
+    elif game.machine == "atari":
+        from emulator.atari import Emulator
+    else:
+        raise ValueError(f"no adapter for machine {game.machine!r}")
+    return Emulator
+
+
 def play(game: games.Game, rom: Path, steps: int, out: Path, rng: random.Random | None) -> dict:
     """Play one session and return its statistics."""
 
-    emulator = Emulator(rom)
+    emulator = _emulator_for(game)(rom)
     emulator.run_frames(game.boot_frames)
     log = RunLog(directory=out, game=game.slug, rom=str(rom))
     observer = Observer(game)
@@ -77,7 +88,7 @@ def play(game: games.Game, rom: Path, steps: int, out: Path, rng: random.Random 
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Let Jev play a GBA game.")
+    parser = argparse.ArgumentParser(description="Let Jev play a Game Boy Advance or Atari 2600 game.")
     parser.add_argument("game", choices=games.SLUGS)
     parser.add_argument("--steps", type=int, default=30, help="how many decisions Jev makes")
     parser.add_argument("--rom", type=Path, help="override the ROM path for this run")
