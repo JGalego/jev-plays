@@ -1,6 +1,6 @@
 """Solar Guard: an action shooter. The hardest fit for a model that answers over HTTP."""
 
-from games.spec import Action, Game, Rom
+from games.spec import Game, Rom, pad
 
 GAME = Game(
     slug="solar_guard",
@@ -13,18 +13,19 @@ GAME = Game(
         sha256="cfd07990e0fa05611fb36b3230d68cea4b65ae11482e822b5b6f97a32a8b88b0",
     ),
     objective=(
-        "You pilot a ship under attack. Get past the title screen, then move to dodge "
-        "what is coming at you and shoot back."
+        "You pilot a ship under attack. The game opens on a title screen, then a menu "
+        "whose entries include starting a mission. In flight, you move to dodge what is "
+        "coming at you and shoot back."
     ),
-    actions={
-        "UP": Action(("UP",), "Move up, or move the menu selection up."),
-        "DOWN": Action(("DOWN",), "Move down, or move the menu selection down."),
-        "LEFT": Action(("LEFT",), "Move left."),
-        "RIGHT": Action(("RIGHT",), "Move right."),
-        "FIRE": Action(("A",), "Fire, or confirm a menu entry."),
-        "SECONDARY": Action(("B",), "Secondary action, or cancel."),
-        "START": Action(("START",), "Press start to begin or to pause."),
-        "WAIT": Action((), "Send no input and let the game run on."),
-    },
+    actions=pad(
+        UP="Fly up; moves the menu selection up.",
+        DOWN="Fly down; moves the menu selection down.",
+        LEFT="Fly left.",
+        RIGHT="Fly right.",
+        A="Fire your weapon in flight; confirms the highlighted entry in a menu.",
+        B="Secondary action in flight; cancels or backs out in a menu.",
+        START="Leave the title screen; pauses during a mission.",
+        NOTHING="Send no input for this step.",
+    ),
     boot_frames=700,
 )

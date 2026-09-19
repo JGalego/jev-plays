@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import random
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,7 +28,7 @@ CAPTURES_PER_DECISION = 3
 SETTLE_FRAMES = 8
 
 
-def play(game: games.Game, rom: Path, steps: int, out: Path) -> dict:
+def play(game: games.Game, rom: Path, steps: int, out: Path, rng: random.Random | None) -> dict:
     """Play one session and return its statistics."""
 
     emulator = Emulator(rom)
@@ -35,18 +36,20 @@ def play(game: games.Game, rom: Path, steps: int, out: Path) -> dict:
     log = RunLog(directory=out, game=game.slug, rom=str(rom))
     observer = Observer(game)
     criteria = game.criteria()
-    frames = []
+    frames: list = []
+    captured_frames: list[int] = []
 
     with TypeSafeClient(timeout=30) as client:
         for step in range(1, steps + 1):
             observation = observer.look(emulator)
-            decision = choose_action(client, observation, criteria)
+            decision = choose_action(client, observation, criteria, rng)
             buttons = game.actions[decision.action].buttons
             observer.note(decision.action, buttons, decision.hold_frames)
             log.record(step, emulator.frame, observation, decision, buttons)
             print(
                 f"  {step:3}/{steps}  {decision.action:<12} {'+'.join(buttons) or '-':<12}"
-                f" {decision.confidence:>5.0%}  hold {decision.hold_frames:>2}f  {decision.latency_ms:>6.0f} ms"
+                f" {decision.confidence:>5.0%}{'*' if decision.sampled else ' '}"
+                f" hold {decision.hold_frames:>2}f  {decision.latency_ms:>6.0f} ms"
             )
 
             panel = [
@@ -59,15 +62,17 @@ def play(game: games.Game, rom: Path, steps: int, out: Path) -> dict:
                 done = decision.hold_frames * chunk // CAPTURES_PER_DECISION
                 held = decision.hold_frames * (chunk + 1) // CAPTURES_PER_DECISION - done
                 emulator.press(buttons, held, release=0)
+                captured_frames.append(held)
                 frames.append(
                     compose(
                         emulator.screen(), f"JEV PLAYS {game.title.upper()}", f"step {step}/{steps}", observation, panel
                     )
                 )
             emulator.run_frames(SETTLE_FRAMES)
+            captured_frames[-1] += SETTLE_FRAMES
             emulator.screen().save(out / "frames" / f"{step:03}.png")
 
-    save_gif(frames, out / "run.gif")
+    save_gif(frames, captured_frames, out / "run.gif")
     return log.finish(emulator.frame)
 
 
@@ -77,6 +82,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--steps", type=int, default=30, help="how many decisions Jev makes")
     parser.add_argument("--rom", type=Path, help="override the ROM path for this run")
     parser.add_argument("--out", type=Path, help="where to write the run (default: runs/<game>-<time>)")
+    parser.add_argument(
+        "--argmax",
+        action="store_true",
+        help="always press Jev's most likely input instead of drawing from its distribution",
+    )
+    parser.add_argument("--seed", type=int, default=0, help="seed for the draw (default: 0)")
     args = parser.parse_args(argv)
 
     load_dotenv(ROOT / ".env")
@@ -102,12 +113,15 @@ def main(argv: list[str] | None = None) -> int:
     out.mkdir(parents=True, exist_ok=True)
     print(f"{game.title} <- {rom.name}  ({args.steps} decisions) -> {out}")
 
-    stats = play(game, rom, args.steps, out)
+    rng = None if args.argmax else random.Random(args.seed)
+    stats = play(game, rom, args.steps, out, rng)
     print(
         f"\n  {stats['decisions']} decisions over {stats['seconds_of_gameplay']}s of play, "
         f"mean confidence {stats['mean_confidence']:.0%}, mean latency {stats['mean_latency_ms']:.0f} ms"
     )
     print(f"  {', '.join(f'{k} x{v}' for k, v in stats['actions'].items())}")
+    if not args.argmax:
+        print(f"  {stats['drawn_below_top']} of them were not Jev's most likely input (*)")
     return 0
 
 

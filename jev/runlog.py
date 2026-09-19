@@ -31,6 +31,7 @@ class RunLog:
             "step": step,
             "frame": frame,
             "action": decision.action,
+            "top_action": decision.top_action,
             "buttons": list(buttons),
             "hold_frames": decision.hold_frames,
             "confidence": round(decision.confidence, 4),
@@ -60,6 +61,7 @@ class RunLog:
             "mean_confidence": round(mean(d["confidence"] for d in self.decisions), 3) if self.decisions else None,
             "mean_latency_ms": round(mean(d["latency_ms"] for d in self.decisions), 1) if self.decisions else None,
             "total_input_tokens": sum(d["input_tokens"] or 0 for d in self.decisions),
+            "drawn_below_top": sum(d["action"] != d["top_action"] for d in self.decisions),
         }
         (self.directory / "stats.json").write_text(json.dumps(stats, indent=2) + "\n")
         return stats

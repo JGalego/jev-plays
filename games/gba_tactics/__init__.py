@@ -1,6 +1,6 @@
 """GBA Tactics: turn-based squad combat, driven entirely through menus and a cursor."""
 
-from games.spec import Action, Game, Rom
+from games.spec import Game, Rom, pad
 
 GAME = Game(
     slug="gba_tactics",
@@ -20,18 +20,19 @@ GAME = Game(
         ),
     ),
     objective=(
-        "You command a squad on a grid. Defeat every unit on the other side. Move the "
-        "cursor over a unit, confirm to select it, and work through the menus."
+        "You command a squad on a grid and must defeat every unit on the other side. The "
+        "game opens on a title screen and a menu you have to get through first. In play, "
+        "you move the cursor over a unit, select it, and work through the action menus."
     ),
-    actions={
-        "UP": Action(("UP",), "Move the cursor or menu selection up."),
-        "DOWN": Action(("DOWN",), "Move the cursor or menu selection down."),
-        "LEFT": Action(("LEFT",), "Move the cursor or menu selection left."),
-        "RIGHT": Action(("RIGHT",), "Move the cursor or menu selection right."),
-        "CONFIRM": Action(("A",), "Confirm the selection: pick a unit, a tile or a menu entry."),
-        "CANCEL": Action(("B",), "Back out of the current selection or menu."),
-        "START": Action(("START",), "Start the game from the title screen, or open the turn menu."),
-        "WAIT": Action((), "Send no input and let the game run on."),
-    },
+    actions=pad(
+        UP="Move the cursor or menu selection up.",
+        DOWN="Move the cursor or menu selection down.",
+        LEFT="Move the cursor or menu selection left.",
+        RIGHT="Move the cursor or menu selection right.",
+        A="Confirm: pick the unit, tile or menu entry under the cursor.",
+        B="Back out of the current selection or menu.",
+        START="Start the game from the title screen, or open the turn menu.",
+        NOTHING="Send no input for this step.",
+    ),
     boot_frames=420,
 )

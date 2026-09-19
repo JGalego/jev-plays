@@ -14,6 +14,19 @@ class Action:
     description: str
 
 
+def pad(**descriptions: str) -> dict[str, Action]:
+    """Build a pad vocabulary keyed by the physical inputs themselves.
+
+    Labels are button names rather than game verbs, so what Jev returns is literally a
+    controller input and the label never assumes which mode the game is in. The
+    description says what that button does in this game. `NOTHING` sends no input.
+    """
+
+    return {
+        name: Action((), text) if name == "NOTHING" else Action((name,), text) for name, text in descriptions.items()
+    }
+
+
 @dataclass(frozen=True, slots=True)
 class Rom:
     """Where a ROM comes from and what its licence allows.

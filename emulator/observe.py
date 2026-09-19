@@ -95,15 +95,18 @@ class Observer:
 
     It remembers the previous frame and the last few inputs so it can report what
     changed, which is a statement of fact about the past, not a suggestion about the
-    future. It never inspects an action to judge whether it was a good one.
+    future. It never inspects an action to judge whether it was a good one, and never
+    says what to press next.
     """
 
-    HISTORY = 4
+    HISTORY = 5
+    # Below this share of changed cells the frame is the same picture, just animated.
+    STILL = 0.03
 
     def __init__(self, game) -> None:
         self._game = game
         self._grid: list[str] | None = None
-        self._history: deque[str] = deque(maxlen=self.HISTORY)
+        self._history: deque[tuple[str, float]] = deque(maxlen=self.HISTORY)
         self._pending: str | None = None
 
     def note(self, action: str, buttons: tuple[str, ...], hold_frames: int) -> None:
@@ -112,6 +115,21 @@ class Observer:
         pressed = "+".join(buttons) or "no buttons"
         self._pending = f"{action} ({pressed}) held {hold_frames} frames"
 
+    def _effects(self) -> list[str]:
+        """Report what the recent inputs did, and say plainly when they did nothing."""
+
+        if not self._history:
+            return []
+        lines = ["RECENT INPUTS, oldest first:"]
+        for entry, changed in self._history:
+            effect = "nothing visibly changed" if changed < self.STILL else f"{changed:.0%} of the screen then changed"
+            lines.append(f"  - {entry} -> {effect}")
+        dead = [entry.split(" ")[0] for entry, changed in self._history if changed < self.STILL]
+        if len(dead) == len(self._history) and len(dead) > 1:
+            unique = sorted(set(dead))
+            lines.append(f"NOTHING HAS CHANGED for {len(dead)} looks in a row, after sending: {', '.join(unique)}.")
+        return lines
+
     def look(self, emulator) -> str:
         """Describe the screen right now, as the text Jev is given."""
 
@@ -119,7 +137,7 @@ class Observer:
         grid = screen_grid(image)
         changed = motion(self._grid, grid)
         if self._pending is not None:
-            self._history.append(f"{self._pending} -> then {changed:.0%} of the screen changed")
+            self._history.append((self._pending, changed))
             self._pending = None
         self._grid = grid
 
@@ -135,9 +153,8 @@ class Observer:
             f"MOTION: {changed:.0%} of the screen changed since the last look",
             "SPRITES (moving objects the hardware is drawing):",
             *(f"  - {line}" for line in describe_sprites(emulator.sprites())),
+            *self._effects(),
         ]
-        if self._history:
-            lines += ["RECENT INPUTS, oldest first:", *(f"  - {entry}" for entry in self._history)]
         if self._game.observe is not None:
             lines += self._game.observe(emulator)
         return "\n".join(lines)

@@ -1,6 +1,6 @@
 """NucularScience: slow reactor management, which suits a model answering over HTTP."""
 
-from games.spec import Action, Game, Rom
+from games.spec import Game, Rom, pad
 
 GAME = Game(
     slug="nucular_science",
@@ -16,20 +16,21 @@ GAME = Game(
         ),
     ),
     objective=(
-        "You are building a nuclear reactor that must not overheat. Move the cursor over "
-        "the grid, place and upgrade components, then run the reactor and sell the power."
+        "You are building a nuclear reactor that must not overheat. The game opens on a "
+        "title screen you have to get through first. In play, you move the cursor over a "
+        "grid, place and upgrade components, then run the reactor and sell the power."
     ),
-    actions={
-        "UP": Action(("UP",), "Move the cursor up."),
-        "DOWN": Action(("DOWN",), "Move the cursor down."),
-        "LEFT": Action(("LEFT",), "Move the cursor left."),
-        "RIGHT": Action(("RIGHT",), "Move the cursor right."),
-        "CONFIRM": Action(("A",), "Confirm: place or buy what is selected."),
-        "CANCEL": Action(("B",), "Cancel, or sell what the cursor is over."),
-        "PREV_TAB": Action(("L",), "Switch to the previous screen or component."),
-        "NEXT_TAB": Action(("R",), "Switch to the next screen or component."),
-        "START": Action(("START",), "Press start to advance the title screen or end the day."),
-        "WAIT": Action((), "Send no input and let the reactor run."),
-    },
+    actions=pad(
+        UP="Move the cursor up.",
+        DOWN="Move the cursor down.",
+        LEFT="Move the cursor left.",
+        RIGHT="Move the cursor right.",
+        A="Confirm: place or buy what is selected.",
+        B="Cancel, or sell what the cursor is over.",
+        L="Switch to the previous screen or component.",
+        R="Switch to the next screen or component.",
+        START="Advance the title screen, or end the day and run the reactor.",
+        NOTHING="Send no input for this step.",
+    ),
     boot_frames=600,
 )

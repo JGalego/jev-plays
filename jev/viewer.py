@@ -16,6 +16,9 @@ MARGIN = 14
 LINE = 12
 CANVAS = (SCREEN[0] + PANEL_WIDTH, 524)
 WRAP = 62
+GBA_FPS = 59.7
+# A long run would otherwise produce a GIF too heavy to put in a README.
+MAX_FRAMES = 90
 
 _BACKGROUND = (17, 17, 21)
 _RULE = (58, 58, 68)
@@ -77,8 +80,27 @@ def compose(screen: Image.Image, title: str, step: str, observation: str, decisi
     return canvas
 
 
-def save_gif(frames: list[Image.Image], path: Path, frame_ms: int = 260) -> None:
+def _thin(frames: list[Image.Image], hold_frames: list[int]) -> tuple[list, list[int]]:
+    """Drop frames evenly if there are too many, moving their time onto the ones kept."""
+
+    if len(frames) <= MAX_FRAMES:
+        return frames, hold_frames
+    step = len(frames) / MAX_FRAMES
+    keep = sorted({min(len(frames) - 1, int(index * step)) for index in range(MAX_FRAMES)})
+    kept, held = [], []
+    for position, index in enumerate(keep):
+        end = keep[position + 1] if position + 1 < len(keep) else len(frames)
+        kept.append(frames[index])
+        held.append(sum(hold_frames[index:end]))
+    return kept, held
+
+
+def save_gif(frames: list[Image.Image], hold_frames: list[int], path: Path, speed: float = 1.5) -> None:
     """Write the composed frames out as a looping GIF.
+
+    Each frame is shown for as long as it took to emulate, divided by `speed`, so the
+    animation runs a little faster than the console did. The wait for Jev's answer is
+    not included -- only emulated time is.
 
     Every frame is quantised against one shared palette. Per-frame palettes would make
     each frame self-contained and roughly triple the file.
@@ -86,9 +108,11 @@ def save_gif(frames: list[Image.Image], path: Path, frame_ms: int = 260) -> None
 
     if not frames:
         return
+    frames, hold_frames = _thin(frames, hold_frames)
+    durations = [max(40, round(held / GBA_FPS * 1000 / speed)) for held in hold_frames]
     sample = Image.new("RGB", (CANVAS[0], CANVAS[1] * min(len(frames), 8)))
     for index, frame in enumerate(frames[:: max(1, len(frames) // 8)][:8]):
         sample.paste(frame, (0, index * CANVAS[1]))
     shared = sample.quantize(colors=64, method=Image.MEDIANCUT)
     quantised = [frame.quantize(palette=shared, dither=Image.Dither.NONE) for frame in frames]
-    quantised[0].save(path, save_all=True, append_images=quantised[1:], duration=frame_ms, loop=0, optimize=True)
+    quantised[0].save(path, save_all=True, append_images=quantised[1:], duration=durations, loop=0, optimize=True)

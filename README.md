@@ -1,9 +1,8 @@
-# jev-plays
+# Jev is a player!
 
 [Jev](https://docs.typesafe.ai) picks the controller inputs for open-source Game Boy Advance games running in [mGBA](https://mgba.io). Nothing else decides anything: there is no policy, planner or heuristic in this repository. The emulator presses whatever Jev answers.
 
-Jev is a System One model — it returns a typed choice, not text — so each frame is
-described to it as compact text and it answers with one button and how long to hold it.
+Jev is a System One model — it returns a typed choice, not text — so each frame is described to it as compact text and it answers with one button and how long to hold it.
 
 ## Quick start
 
@@ -13,7 +12,7 @@ uv pip install -e .                  # 2. the package
 ./scripts/build_mgba.sh              # 3. mGBA + its Python bindings (~3 min, not on PyPI)
 ./scripts/fetch_roms.py              # 4. the ROMs we may legally fetch
 cp .env.example .env                 # 5. add your TYPESAFE_API_KEY
-jev-plays anguna --steps 30
+jev-plays anguna --steps 80
 ```
 
 Each run writes `runs/<game>-<time>/` with `run.jsonl` (every decision), `stats.json`,
@@ -44,42 +43,44 @@ Adding a game: drop a `games/<slug>/__init__.py` with a `Game(...)`, add the slu
 The panel on the right of each GIF is the text Jev was given; the line under the screen
 is what it answered.
 
-| Game | Command | ROM | 30 decisions |
-|---|---|---|---|
-| [Anguna](#anguna) | `jev-plays anguna` | fetched | 42% mean confidence, 356 ms |
-| [GBA Tactics](#gba-tactics) | `jev-plays gba_tactics` | fetched | 40% mean confidence, 332 ms |
-| [Skyland](#skyland) | `jev-plays skyland` | fetched | 65% mean confidence, 322 ms |
-| [Solar Guard](#solar-guard) | `jev-plays solar_guard` | fetched | 42% mean confidence, 333 ms |
-| Duster | `jev-plays duster` | you supply `DUSTER_ROM` | not run |
-| NucularScience | `jev-plays nucular_science` | you supply `NUCULAR_SCIENCE_ROM` | not run |
+| Game | Command | ROM | 80 decisions | How far Jev got |
+|---|---|---|---|---|
+| [Anguna](#anguna) | `jev-plays anguna` | fetched | 31% mean confidence, 328 ms | fighting in the dungeon |
+| [GBA Tactics](#gba-tactics) | `jev-plays gba_tactics` | fetched | 28% mean confidence, 325 ms | moved a unit, opened its attack range |
+| [Skyland](#skyland) | `jev-plays skyland` | fetched | 34% mean confidence, 310 ms | flew the sky map into zone 1 |
+| [Solar Guard](#solar-guard) | `jev-plays solar_guard` | fetched | 33% mean confidence, 330 ms | launched a mission, flying it |
+| Duster | `jev-plays duster` | you supply `DUSTER_ROM` | not run | — |
+| NucularScience | `jev-plays nucular_science` | you supply `NUCULAR_SCIENCE_ROM` | not run | — |
+
+The GIFs play emulated time at about 1.7× speed. The wait for Jev's answer is not shown.
 
 ### Anguna
 
 ![Jev plays Anguna](docs/anguna.gif)
 
-Jev cleared the title screen, pressed through the whole intro and reached the first
-dungeon room. 24 waits, 6 attacks.
+Through the intro, into the dungeon, and fighting. 36 presses of A, 20 of start, 18 no
+input, and a scattering of movement.
 
 ### GBA Tactics
 
 ![Jev plays GBA Tactics](docs/gba_tactics.gif)
 
-Jev started a battle and selected a unit; the last frames show its movement range open.
-26 waits, 3 confirms, 1 start.
+Started a battle, selected a unit, moved it, and reached the attack menu — the action
+list drops from `MOVE/ATTACK/END` to `ATTACK/END` once a unit has moved.
 
 ### Skyland
 
 ![Jev plays Skyland](docs/skyland.gif)
 
-Jev chose to wait all 30 times, at its highest confidence of any game, and never left
-the menu. Pressing A six times does start the game, so this is Jev's answer, not a stuck
-loop.
+Out of the menus, onto the sky map, and through a zone-1 encounter before backing out to
+the title again. Still the most cautious of the four: 43 of 80 decisions were no input.
 
 ### Solar Guard
 
 ![Jev plays Solar Guard](docs/solar_guard.gif)
 
-Jev reached the main menu and then alternated start and wait for the rest of the run.
+Cleared the title, picked *Orbit Tidying* off the mission list, and flew it — the last
+frames are the cockpit HUD with fuel, heat and radar.
 
 ## ROMs and licences
 
@@ -108,11 +109,27 @@ ROM you supply:
 DUSTER_ROM=/path/to/Duster.gba jev-plays duster
 ```
 
+## Why the input is drawn, not taken
+
+Jev returns a probability over the buttons. Pressing its single most likely one gets
+stuck: on Solar Guard's "Press START" screen, `START` averaged 17% and peaked at 25%, so
+it never topped the distribution and was never pressed once in 80 decisions. More steps
+cannot help when the argmax is stable.
+
+So the input is drawn in proportion to Jev's own probabilities. The numbers are entirely
+Jev's — there is no policy, ranking or veto on this side of the wire, and a draw is not a
+decision-maker. `run.jsonl` records the full distribution and `top_action` for every
+step, and the terminal marks a draw that differed from the top label with `*`.
+`--argmax` restores the deterministic behaviour, `--seed` makes a draw reproducible.
+
 ## Notes
 
 - Jev takes text only; there is no vision input, which is why the observer describes the
   frame rather than sending it.
-- Latency ran 260–900 ms per decision, so turn-based games fit the loop far better than
+- Buttons are named after the hardware (`A`, `START`, `UP`, `NOTHING`), not after game
+  verbs. An earlier version called Solar Guard's A button `FIRE`, which read wrong on a
+  menu screen; the description carries the meaning instead.
+- Latency ran 240–900 ms per decision, so turn-based games fit the loop better than
   action games.
 - mGBA is built from a pinned 0.10.5 checkout with `scripts/mgba-0.10.5-headless.patch`,
   which only guards e-reader symbols that exist solely in an ffmpeg build.

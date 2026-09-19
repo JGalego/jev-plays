@@ -1,6 +1,6 @@
 """Duster: a strategy board game. Simple, turn-based, and forgiving of slow decisions."""
 
-from games.spec import Action, Game, Rom
+from games.spec import Game, Rom, pad
 
 GAME = Game(
     slug="duster",
@@ -17,18 +17,19 @@ GAME = Game(
         ),
     ),
     objective=(
-        "You play a turn-based battle on a board of tiles. Move the cursor to one of your "
-        "pieces, select it, and move or attack with it."
+        "You play a turn-based battle on a board of tiles. The game opens on a title "
+        "screen and menus you have to get through first. In play, you move the cursor to "
+        "one of your pieces, select it, and move or attack with it."
     ),
-    actions={
-        "UP": Action(("UP",), "Move the cursor up."),
-        "DOWN": Action(("DOWN",), "Move the cursor down."),
-        "LEFT": Action(("LEFT",), "Move the cursor left."),
-        "RIGHT": Action(("RIGHT",), "Move the cursor right."),
-        "CONFIRM": Action(("A",), "Confirm: select a piece, a destination or a menu entry."),
-        "CANCEL": Action(("B",), "Back out of the current selection."),
-        "START": Action(("START",), "Press start to begin, or to open the menu."),
-        "WAIT": Action((), "Send no input and let the game run on."),
-    },
+    actions=pad(
+        UP="Move the cursor up.",
+        DOWN="Move the cursor down.",
+        LEFT="Move the cursor left.",
+        RIGHT="Move the cursor right.",
+        A="Confirm: select a piece, a destination or a menu entry.",
+        B="Back out of the current selection.",
+        START="Begin the game, or open the menu.",
+        NOTHING="Send no input for this step.",
+    ),
     boot_frames=500,
 )

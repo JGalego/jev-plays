@@ -1,6 +1,6 @@
 """Anguna: a top-down action RPG. The simplest loop to validate -- move, hit things."""
 
-from games.spec import Action, Game, Rom
+from games.spec import Game, Rom, pad
 
 GAME = Game(
     slug="anguna",
@@ -18,16 +18,16 @@ GAME = Game(
         "You are a hero exploring a dungeon from above. Get off the title screen, then "
         "explore new rooms, attack the monsters you meet and stay alive."
     ),
-    actions={
-        "UP": Action(("UP",), "Walk north, or move the cursor up a menu."),
-        "DOWN": Action(("DOWN",), "Walk south, or move the cursor down a menu."),
-        "LEFT": Action(("LEFT",), "Walk west, or move the cursor left."),
-        "RIGHT": Action(("RIGHT",), "Walk east, or move the cursor right."),
-        "ATTACK": Action(("A",), "Swing the sword, or confirm the highlighted menu entry."),
-        "ITEM": Action(("B",), "Use the equipped second item, or cancel."),
-        "SWITCH_ITEM": Action(("R",), "Cycle to the next second item."),
-        "MENU": Action(("START",), "Open or close the pause and inventory screen."),
-        "WAIT": Action((), "Send no input and let the game run on."),
-    },
+    actions=pad(
+        UP="Walk north; moves the cursor up in a menu.",
+        DOWN="Walk south; moves the cursor down in a menu.",
+        LEFT="Walk west; moves the cursor left in a menu.",
+        RIGHT="Walk east; moves the cursor right in a menu.",
+        A="Swing the sword; confirms the highlighted entry in a menu and advances dialogue.",
+        B="Use the equipped second item; cancels in a menu.",
+        R="Cycle to the next second item.",
+        START="Open or close the pause and inventory screen; starts the game from the title.",
+        NOTHING="Send no input for this step.",
+    ),
     boot_frames=420,
 )
