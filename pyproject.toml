@@ -1,0 +1,32 @@
+[project]
+name = "jev-plays"
+version = "0.1.0"
+description = "Jev plays open-source Game Boy Advance games through mGBA."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pillow>=10.0",
+    "python-dotenv>=1.0",
+    "typesafe-sdk>=0.7.0",
+    # mgba is not on PyPI; scripts/build_mgba.sh compiles it into this venv.
+]
+
+[project.scripts]
+jev-plays = "jev.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["jev", "emulator", "games"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[dependency-groups]
+dev = ["ruff>=0.6"]

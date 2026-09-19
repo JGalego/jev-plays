@@ -1,0 +1,19 @@
+# Secrets
+.env
+
+# ROMs are never committed: see the licence notes in README.md
+roms/
+
+# The mGBA checkout and build
+.mgba/
+
+# Runs (keep the curated GIFs in docs/)
+runs/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
